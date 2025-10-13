@@ -19,4 +19,11 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Areas\AnnualSalesReport\Controllers\" />
+    <Folder Include="Areas\AnnualSalesReport\Data\" />
+    <Folder Include="Areas\AnnualSalesReport\Models\" />
+    <Folder Include="Areas\AnnualSalesReport\Views\" />
+  </ItemGroup>
+
 </Project>
