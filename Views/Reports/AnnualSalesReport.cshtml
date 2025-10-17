@@ -31,51 +31,98 @@
     <tbody></tbody>
 </table>
 
-<!-- Message if no data -->
 <div id="noDataMessage" style="display:none;">No data available for this year.</div>
 
+<!-- D3 Bar Chart -->
+<div>
+    <svg width="100%" height="400px" class="border border-primary rounded p-2"></svg>
+</div>
+
 @section Scripts {
-    <script>
-        document.getElementById("year").addEventListener("change", function() {
+    <script type="module">
+        import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+        // Select the SVG element
+        const svg = d3.select("svg");
+        const w = svg.node().getBoundingClientRect().width;
+        const h = svg.node().getBoundingClientRect().height;
+
+        // Function to build the bar graph
+        function buildGraph(dataSet) {
+            console.log("Building graph with data:", dataSet);
+
+            // Clear previous content
+            svg.selectAll("*").remove();
+
+            if (!dataSet || dataSet.length === 0) return;
+
+            const barWidth = w / dataSet.length;
+
+            // Bind data to <g> elements
+            const barGroups = svg.selectAll("g")
+                .data(dataSet)
+                .join("g")
+                .attr("transform", (d, i) => `translate(${i * barWidth},0)`);
+
+            // Add rectangles
+            barGroups.append("rect")
+                .attr("width", barWidth - 5)
+                .attr("height", d => d.totalItems) // Use totalItems as bar height
+                .attr("y", d => h - d.totalItems)
+                .attr("fill", "steelblue");
+
+            // Add text labels
+            barGroups.append("text")
+                .text(d => d.totalItems)
+                .attr("x", (barWidth - 5) / 2)
+                .attr("y", d => h - d.totalItems - 5)
+                .attr("text-anchor", "middle")
+                .attr("fill", "black");
+        }
+
+        // Event listener for dropdown
+        document.getElementById("year").addEventListener("change", function () {
             const year = this.value;
             const table = document.getElementById("reportTable");
             const tbody = table.querySelector("tbody");
             const noData = document.getElementById("noDataMessage");
 
-            // Reset display
+            // Reset table and message
             tbody.innerHTML = "";
+            table.style.display = "none";
             noData.style.display = "none";
 
-            if (year) {
-                fetch(`/Reports/AnnualSalesReportData?Year=${year}`)
-                    .then(response => {
-                        if (!response.ok) throw new Error("Error fetching data");
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.length === 0) {
-                            table.style.display = "none";
-                            noData.style.display = "block";
-                        } else {
-                            data.forEach(row => {
-                                const tr = document.createElement("tr");
-                                tr.innerHTML = `
-                                    <td>${row.monthName}</td>
-                                    <td>${row.totalItems}</td>
-                                    <td>${row.totalSales.toFixed(2)}</td>
-                                `;
-                                tbody.appendChild(tr);
-                            });
-                            table.style.display = "table";
-                        }
-                    })
-                    .catch(() => {
-                        table.style.display = "none";
+            if (!year) return;
+
+            fetch(`/Reports/AnnualSalesReportData?year=${year}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Error fetching data");
+                    return response.json();
+                })
+                .then(data => {
+                    if (!data || data.length === 0) {
                         noData.style.display = "block";
-                    });
-            } else {
-                table.style.display = "none";
-            }
+                    } else {
+                        // Populate table
+                        data.forEach(row => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${row.monthName}</td>
+                                <td>${row.totalItems}</td>
+                                <td>${row.totalSales.toFixed(2)}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        table.style.display = "table";
+
+                        // Build D3 graph
+                        buildGraph(data);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    noData.style.display = "block";
+                });
         });
     </script>
 }
