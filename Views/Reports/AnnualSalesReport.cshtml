@@ -1,5 +1,81 @@
-﻿@{
-    ViewData["Title"] = "Index";
+﻿@model SelectList
+@{
+    ViewData["Title"] = "Annual Sales Report";
 }
 
-<h1>hello</h1>
+<h2>@ViewData["Title"]</h2>
+
+<!-- Dropdown to select year -->
+<div class="form-group">
+    <label for="year">Select Year:</label>
+    <select id="year" name="year" class="form-control">
+        <option value="">Select a Year...</option>
+        @foreach (var year in Model)
+        {
+            <option value="@year.Value">@year.Text</option>
+        }
+    </select>
+</div>
+
+<hr />
+
+<!-- Table for report data -->
+<table id="reportTable" class="table table-bordered" style="display:none;">
+    <thead>
+        <tr>
+            <th>Month</th>
+            <th>Total Items</th>
+            <th>Total Sales ($)</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Message if no data -->
+<div id="noDataMessage" style="display:none;">No data available for this year.</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("year").addEventListener("change", function() {
+            const year = this.value;
+            const table = document.getElementById("reportTable");
+            const tbody = table.querySelector("tbody");
+            const noData = document.getElementById("noDataMessage");
+
+            // Reset display
+            tbody.innerHTML = "";
+            noData.style.display = "none";
+
+            if (year) {
+                fetch(`/Reports/AnnualSalesReportData?Year=${year}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Error fetching data");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.length === 0) {
+                            table.style.display = "none";
+                            noData.style.display = "block";
+                        } else {
+                            data.forEach(row => {
+                                const tr = document.createElement("tr");
+                                tr.innerHTML = `
+                                    <td>${row.monthName}</td>
+                                    <td>${row.totalItems}</td>
+                                    <td>${row.totalSales.toFixed(2)}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                            table.style.display = "table";
+                        }
+                    })
+                    .catch(() => {
+                        table.style.display = "none";
+                        noData.style.display = "block";
+                    });
+            } else {
+                table.style.display = "none";
+            }
+        });
+    </script>
+}
