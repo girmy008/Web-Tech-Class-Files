@@ -58,13 +58,18 @@
             const barWidth = w / dataSet.length;
             const maxItems = d3.max(dataSet, d => d.totalItems);
 
+            // Y scale (linear)
+            const yScale = d3.scaleLinear()
+                .domain([0, maxItems])
+                .range([h, 0]); // reversed for bottom-up bars
+
             // Bind data to groups
             const barGroups = svg.selectAll("g").data(dataSet);
 
             // EXIT old elements
             barGroups.exit().remove();
 
-            // ENTER new elements
+            // ENTER new groups
             const newBarGroups = barGroups.enter()
                 .append("g")
                 .attr("transform", (d, i) => `translate(${i * barWidth},0)`);
@@ -72,16 +77,16 @@
             // Append rectangles
             newBarGroups.append("rect")
                 .attr("x", 0)
-                .attr("y", d => h - (d.totalItems / maxItems) * h)
+                .attr("y", d => yScale(d.totalItems))
                 .attr("width", barWidth - margin)
-                .attr("height", d => (d.totalItems / maxItems) * h)
+                .attr("height", d => h - yScale(d.totalItems))
                 .attr("fill", "steelblue");
 
             // Append text above bars
             newBarGroups.append("text")
                 .text(d => d.totalItems)
                 .attr("x", (barWidth - margin) / 2)
-                .attr("y", d => h - (d.totalItems / maxItems) * h - 5)
+                .attr("y", d => yScale(d.totalItems) - 5)
                 .attr("text-anchor", "middle")
                 .attr("fill", "black");
 
@@ -89,14 +94,14 @@
             barGroups.transition()
                 .duration(500)
                 .select("rect")
-                .attr("y", d => h - (d.totalItems / maxItems) * h)
-                .attr("height", d => (d.totalItems / maxItems) * h);
+                .attr("y", d => yScale(d.totalItems))
+                .attr("height", d => h - yScale(d.totalItems));
 
             barGroups.transition()
                 .duration(500)
                 .select("text")
                 .text(d => d.totalItems)
-                .attr("y", d => h - (d.totalItems / maxItems) * h - 5);
+                .attr("y", d => yScale(d.totalItems) - 5);
         }
 
         // Dropdown event listener
