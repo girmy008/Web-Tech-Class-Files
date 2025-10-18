@@ -43,65 +43,94 @@
         import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
         const svg = d3.select("svg");
-        const w = svg.node().getBoundingClientRect().width;
-        const h = svg.node().getBoundingClientRect().height;
-        const margin = 5; // space between bars
+        const svgWidth = svg.node().getBoundingClientRect().width;
+        const svgHeight = svg.node().getBoundingClientRect().height;
+
+        // Margins for axes
+        const chartMargins = { top: 40, right: 25, bottom: 80, left: 50 };
+        const width = svgWidth - chartMargins.left - chartMargins.right;
+        const height = svgHeight - chartMargins.top - chartMargins.bottom;
+
+        // Chart group
+        const chartGroup = svg.append("g")
+            .attr("class", "chartGroup")
+            .attr("transform", `translate(${chartMargins.left}, ${chartMargins.top})`);
 
         function buildGraph(dataSet) {
             console.log("Building graph with data:", dataSet);
 
             if (!dataSet || dataSet.length === 0) {
-                svg.selectAll("*").remove();
+                chartGroup.selectAll("*").remove();
                 return;
             }
 
-            const barWidth = w / dataSet.length;
-            const maxItems = d3.max(dataSet, d => d.totalItems);
+            chartGroup.selectAll("*").remove(); // clear previous graph
 
-            // Y scale (linear)
+            const monthArray = Array.from(dataSet, d => d.monthName);
+
+            // X scale
+            const xScale = d3.scaleBand()
+                .domain(monthArray)
+                .range([0, width])
+                .paddingInner(0.1);
+
+            // Y scale
             const yScale = d3.scaleLinear()
-                .domain([0, maxItems])
-                .range([h, 0]); // reversed for bottom-up bars
+                .domain([0, d3.max(dataSet, d => d.totalItems)])
+                .nice()
+                .range([height, 0]);
 
-            // Bind data to groups
-            const barGroups = svg.selectAll("g").data(dataSet);
+            // Y-Axis
+            const yAxis = d3.axisLeft(yScale);
+            chartGroup.append("g")
+                .attr("class", "y-axis")
+                .call(yAxis);
 
-            // EXIT old elements
-            barGroups.exit().remove();
+            // X-Axis
+            const xAxis = d3.axisBottom(xScale);
+            chartGroup.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(0, ${height})`)
+                .call(xAxis)
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em");
 
-            // ENTER new groups
-            const newBarGroups = barGroups.enter()
-                .append("g")
-                .attr("transform", (d, i) => `translate(${i * barWidth},0)`);
-
-            // Append rectangles
-            newBarGroups.append("rect")
-                .attr("x", 0)
+            // Bars with animation
+            chartGroup.selectAll(".bar")
+                .data(dataSet)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScale(d.monthName))
+                .attr("y", height) // start from bottom
+                .attr("width", xScale.bandwidth())
+                .attr("height", 0) // initial height zero for animation
+                .attr("fill", d => d.totalItems === d3.max(dataSet, d => d.totalItems) ? "crimson" : "steelblue") // highlight max
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
                 .attr("y", d => yScale(d.totalItems))
-                .attr("width", barWidth - margin)
-                .attr("height", d => h - yScale(d.totalItems))
-                .attr("fill", "steelblue");
+                .attr("height", d => height - yScale(d.totalItems));
 
-            // Append text above bars
-            newBarGroups.append("text")
-                .text(d => d.totalItems)
-                .attr("x", (barWidth - margin) / 2)
-                .attr("y", d => yScale(d.totalItems) - 5)
+            // Add text labels over bars
+            chartGroup.selectAll(".bar-text")
+                .data(dataSet)
+                .enter()
+                .append("text")
+                .attr("class", "bar-text")
+                .text(d => d.totalItems.toLocaleString())
+                .attr("x", d => xScale(d.monthName) + xScale.bandwidth() / 2)
+                .attr("y", height) // start at bottom for animation
                 .attr("text-anchor", "middle")
-                .attr("fill", "black");
-
-            // UPDATE existing groups
-            barGroups.transition()
-                .duration(500)
-                .select("rect")
-                .attr("y", d => yScale(d.totalItems))
-                .attr("height", d => h - yScale(d.totalItems));
-
-            barGroups.transition()
-                .duration(500)
-                .select("text")
-                .text(d => d.totalItems)
-                .attr("y", d => yScale(d.totalItems) - 5);
+                .attr("fill", "white")
+                .style("font-size", "1em")
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
+                .attr("y", d => yScale(d.totalItems) + 20); // position inside bar
         }
 
         // Dropdown event listener
@@ -125,7 +154,7 @@
                 .then(data => {
                     if (!data || data.length === 0) {
                         noData.style.display = "block";
-                        svg.selectAll("*").remove();
+                        chartGroup.selectAll("*").remove();
                     } else {
                         // Populate table
                         data.forEach(row => {
@@ -146,7 +175,7 @@
                 .catch(err => {
                     console.error(err);
                     noData.style.display = "block";
-                    svg.selectAll("*").remove();
+                    chartGroup.selectAll("*").remove();
                 });
         });
     </script>
