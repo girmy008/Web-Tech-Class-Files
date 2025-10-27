@@ -7,6 +7,7 @@ import Contact from "./routes/Contact"
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import CardListSearch from "./components/CardList"
+import CardDetail from './components/CardDetails';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -18,7 +19,8 @@ root.render(
                 <Route path="Contact" element={<Contact />} />
                 <Route path="Products" element={<CardListSearch />} />
                 <Route path="" element={<Home />} /> { }
-                <Route path="*" element={<Home />} /> { }
+                    <Route path="*" element={<Home />} /> { }
+                    <Route path="Products/:itemId" element={<CardDetail />} /> { }
                 </Route>
             </Routes>
         </BrowserRouter>

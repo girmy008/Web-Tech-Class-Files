@@ -8,7 +8,7 @@ const CardDetail = ({ }) => {
     const [itemId, setItemId] = useState(params.itemId);
     useEffect(() => {
         console.log("useEffect");
-        fetch(`http://localhost:15754/api/ItemsWebAPI/${itemId}`) 
+        fetch(`http://localhost:5154/api/ItemsWebAPI/getItem/${itemId}`) 
             .then(response => response.json())
             .then(data => setState(data))
             .catch(err => {
