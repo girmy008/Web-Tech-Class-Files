@@ -2,6 +2,7 @@ import React from "react"
 import Demo from "./components/CardDemo";
 import { Link, BrowserRouter, Outlet }  from "react-router-dom"
 import reactDom from 'react-dom/client'
+import Graph from "./routes/Graph";
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
                             <Link className="nav-link active" to="/Home">Home</Link>
                             <Link className="nav-link" to="/Contact">Contact</Link>
                             <Link className="nav-link" to="/Products">Products</Link>
+                            <Link className="nav-link" to="/Graph">Graph</Link>
                         </div>
                     </div>
                 </div>
